@@ -1,0 +1,107 @@
+:: StoryTitle
+Project Manager Simulator
+
+:: StorySettings
+ifid:cf332bda-daec-4957-8b90-6e2f43f9936d
+
+:: Start
+var_current_budget: 500
+var_max_budget: 800
+var_current_deadline: 10
+var_max_deadline: 14
+var_current_day: 1
+has_learned_deadline: false
+has_learned_budget: false
+ui_title: 'Project Management Simulator'
+ui_phase: 'Initiation'
+ui_room: ''
+config.header.center: '{room}'
+--
+[align center]
+# {ui_title} - {ui_phase}
+
+Description of simulator
+
+[[Enter scene1->scene_scene1]]
+
+
+:: scene_scene1
+room: 'Scene 1'
+--
+Description of scenario where you can find out budget 
+
+
+[unless has_learned_budget]
+Ask [["What is your budget for this work?"->scene_learn_budget]]
+
+[unless has_learned_deadline]
+Ask [["When does the work need to be finished by?"->scene_learn_deadline]]
+
+[continue]
+Say [["Yes thank you"->scene_event2]]
+
+
+:: scene_learn_budget
+has_learned_budget: true
+--
+Budget is £{var_current_budget}.
+
+[['Return'->scene_scene1]]
+
+:: scene_learn_deadline
+has_learned_deadline: true
+--
+Deadline is in {var_current_deadline} days
+
+[['Return'->scene_scene1]]
+
+:: scene_event2
+room: 'Scene 2'
+temp_scope_extra_budget: random.d4 * 25
+temp_scope_extra_days_offered: random.d10 > 5
+--
+
+Add extra scope and we'll give you £{temp_scope_extra_budget}
+
+[if temp_scope_extra_days_offered]
+You can have another 2 days to complete the work if you do.
+
+[continue]
+[[Yes->scene_add_extra_scope]]
+[[No->scene_no_extra_scope]]
+
+:: scene_add_extra_scope
+var_current_budget: var_current_budget + temp_scope_extra_budget
+var_current_deadline (temp_scope_extra_days_offered): var_current_deadline + 2
+--
+
+Added extra
+
+Budget {var_current_budget}
+Deadline {var_current_deadline}
+
+[[scene_try_convince_client]]
+
+::scene_no_extra_scope
+--
+
+No Scope Added
+
+Budget {var_current_budget}
+Deadline {var_current_deadline}
+
+[[scene_try_convince_client]]
+
+
+::scene_try_convince_client
+--
+
+Can do this in budget and deadline?
+
+[[Can do it->scene_convince_yes]]
+[[Can not do it->scene_convince_no]]
+
+::scene_convince_no
+--
+Agree not to do the project
+_end_
