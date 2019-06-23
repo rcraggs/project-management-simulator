@@ -4,104 +4,121 @@ Project Manager Simulator
 :: StorySettings
 ifid:cf332bda-daec-4957-8b90-6e2f43f9936d
 
-:: Start
-var_current_budget: 500
-var_max_budget: 800
-var_current_deadline: 10
-var_max_deadline: 14
-var_current_day: 1
-has_learned_deadline: false
-has_learned_budget: false
+:: Start 
+
+var_current_scope: 10 + random.d10
+
+var_current_budget:         var_current_scope * 200 + (random.d100 * 10)
+var_max_budget:             var_current_budget + (random.d100 * 10)
+var_current_deadline:       var_current_scope + random.d5
+var_max_deadline:           var_current_deadline + random.d10
+var_current_day:            1
+var_current_qual:           100
+var_cust_happy:             100
+var_work_pc:                100
+var_num_workers:            0
+
+init_has_learned_deadline:       false
+init_has_learned_budget:         false
+init_has_learned_scope:          false
+init_has_discussed_scope_2:      false
+
 ui_title: 'Project Management Simulator'
 ui_phase: 'Initiation'
-ui_room: ''
-config.header.center: '{room}'
+ui_room: 'room-name'
+
+config.header.center: '{ui_room} - {ui_phase}'
+
 --
 [align center]
-# {ui_title} - {ui_phase}
+# {ui_title}
 
 Description of simulator
 
-[[Enter scene1->scene_scene1]]
+[[Start->init_scene_options]]
 
-
-:: scene_scene1
-room: 'Scene 1'
+:: init_scene_options
+ui_room: ''
 --
-Description of scenario where you can find out budget 
 
+_discussing the project_
 
-[unless has_learned_budget]
-Ask [["What is your budget for this work?"->scene_learn_budget]]
+[unless init_has_learned_budget]
+Ask [["Discuss the budget for this project?"->init_scene_learn_budget]]
 
-[unless has_learned_deadline]
-Ask [["When does the work need to be finished by?"->scene_learn_deadline]]
+[unless init_has_learned_deadline]
+Ask [["Discuss the deadline for this project?"->init_scene_learn_deadline]]
+
+[unless init_has_learned_scope]
+Ask [["Discuss the scope for this project?"->init_scene_disuss_scope]]
 
 [continue]
-Say [["Yes thank you"->scene_event2]]
+Say [["I think I've learned what I need to know"->init_scene_try_convince_client]]
 
+[note]
+  initial budget = scope * 200 + random(0-1000)
+  initial deadline = scope + random(0-5)
 
-:: scene_learn_budget
-has_learned_budget: true
+:: init_scene_learn_budget
+ui_room: ''
+init_has_learned_budget:   true
 --
-Budget is £{var_current_budget}.
+Budget is £{var_current_budget}, with a little flexibility if absolutely necessary.
 
-[['Return'->scene_scene1]]
+[['Return'->init_scene_options]]
 
-:: scene_learn_deadline
-has_learned_deadline: true
+:: init_scene_learn_deadline
+init_has_learned_deadline: true
 --
-Deadline is in {var_current_deadline} days
+Deadline is in {var_current_deadline} days, with a little flexibility if absolutely necessary.
 
-[['Return'->scene_scene1]]
+[['Return'->init_scene_options]]
 
-:: scene_event2
-room: 'Scene 2'
-temp_scope_extra_budget: random.d4 * 25
-temp_scope_extra_days_offered: random.d10 > 5
---
-
-Add extra scope and we'll give you £{temp_scope_extra_budget}
-
-[if temp_scope_extra_days_offered]
-You can have another 2 days to complete the work if you do.
-
-[continue]
-[[Yes->scene_add_extra_scope]]
-[[No->scene_no_extra_scope]]
-
-:: scene_add_extra_scope
-var_current_budget: var_current_budget + temp_scope_extra_budget
-var_current_deadline (temp_scope_extra_days_offered): var_current_deadline + 2
+:: init_scene_disuss_scope
+ui_room: ''
+init_has_learned_scope:   true
+temp_extra_scope_amount:  2 + random.d5
+temp_scope_extra_budget:  temp_extra_scope_amount * (175 + random.d50)
+temp_scope_extra_days:    temp_extra_scope_amount - 2 + random.d4
 --
 
-Added extra
+The current scope is {var_current_scope}.
 
-Budget {var_current_budget}
-Deadline {var_current_deadline}
+Add extra scope of {temp_extra_scope_amount} for extra £{temp_scope_extra_budget} and {temp_scope_extra_days} days.
 
-[[scene_try_convince_client]]
+> [[Yes->init_scene_add_extra_scope]]
+> [[No->init_scene_options]]
 
-::scene_no_extra_scope
+:: init_scene_add_extra_scope
+ui_room: 'room-name'
+var_current_budget:     var_current_budget + temp_scope_extra_budget
+var_current_deadline:   var_current_deadline + temp_scope_extra_days
+var_current_scope:      var_current_scope + temp_extra_scope_amount
 --
 
-No Scope Added
+Added scope added:
 
-Budget {var_current_budget}
-Deadline {var_current_deadline}
+[[Return->init_scene_options]]
 
-[[scene_try_convince_client]]
-
-
-::scene_try_convince_client
+::init_scene_try_convince_client
+ui_room: 'Go/No Discussion'
 --
 
-Can do this in budget and deadline?
+Are you happy to do this project for the available budget and deadline?
 
-[[Can do it->scene_convince_yes]]
-[[Can not do it->scene_convince_no]]
+> [[Yes->planning_scene_start]]
+> [[No->init_scene_convince_no]]
 
-::scene_convince_no
+::init_scene_convince_no
+ui_room: 'Decide not to do the project'
 --
 Agree not to do the project
 _end_
+
+
+::planning_scene_start
+ui_phase: 'Planning'
+ui_room: 'Start of Planning'
+--
+Confirm doing the project
+
