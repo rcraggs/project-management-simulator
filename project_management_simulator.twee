@@ -6,6 +6,8 @@ ifid:cf332bda-daec-4957-8b90-6e2f43f9936d
 
 :: Start 
 
+const_team_inefficiency_factor:   0.95
+
 var_current_scope: 10 + random.d10
 
 var_current_budget:         var_current_scope * 200 + (random.d100 * 10)
@@ -94,6 +96,7 @@ ui_room: 'room-name'
 var_current_budget:     var_current_budget + temp_scope_extra_budget
 var_current_deadline:   var_current_deadline + temp_scope_extra_days
 var_current_scope:      var_current_scope + temp_extra_scope_amount
+var_max_budget:         var_current_budget + (random.d100 * 10)
 --
 
 Added scope added:
@@ -117,8 +120,56 @@ _end_
 
 
 ::planning_scene_start
+
 ui_phase: 'Planning'
 ui_room: 'Start of Planning'
+
+var_team_1_cost_per_day:    200 + (random.fraction / 5)
 --
-Confirm doing the project
+
+How many people do you want to join your team for this project?  
+
+[JavaScript]
+write("Each person costs £" + var_team_1_cost_per_day.toFixed(2) + " per day.</br></br>");
+
+write("One person can complete 1 room per day</br>");
+write("Two people can complete " + (2 * const_team_inefficiency_factor).toFixed(2)  + " room per day</br>");
+write("Three people can complete " + (3 * Math.pow(const_team_inefficiency_factor, 2)).toFixed(2)  + " room per day</br>");
+
+[continue]
+
+> [[Hire 1 person->planning_scene_hire_1]]
+> [[Hire 2 person->planning_scene_hire_2]]
+> [[Hire 3 person->planning_scene_hire_3]]
+
+::planning_scene_hire_1
+var_num_staff:  1
+--
+
+Hiring 1
+
+{embed passage: 'planning_scene_hire_end'}
+
+
+::planning_scene_hire_2
+var_num_staff:  2
+--
+
+Hiring 2
+
+{embed passage: 'planning_scene_hire_end'}
+
+::planning_scene_hire_3
+var_num_staff:  3
+--
+
+Hiring 3
+
+{embed passage: 'planning_scene_hire_end'}
+
+
+::planning_scene_hire_end
+---
+
+End of hiring
 
