@@ -19,6 +19,7 @@ var_current_qual:           100
 var_cust_happy:             100
 var_work_pc:                100
 var_num_workers:            0
+var_team_1_cost_per_day:    200 + random.d50 - random.d25
 
 init_has_learned_deadline:       false
 init_has_learned_budget:         false
@@ -124,23 +125,141 @@ _end_
 ui_phase: 'Planning'
 ui_room: 'Start of Planning'
 
-var_team_1_cost_per_day:    200 + (random.fraction / 5)
 --
 
 How many people do you want to join your team for this project?  
 
 [JavaScript]
-write("Each person costs £" + var_team_1_cost_per_day.toFixed(2) + " per day.</br></br>");
-
+write("Each person costs £" + var_team_1_cost_per_day.toFixed(0) + " per day.</br></br>");
 write("One person can complete 1 room per day</br>");
 write("Two people can complete " + (2 * const_team_inefficiency_factor).toFixed(2)  + " room per day</br>");
 write("Three people can complete " + (3 * Math.pow(const_team_inefficiency_factor, 2)).toFixed(2)  + " room per day</br>");
 
 [continue]
 
+Plan how you will deliver the project based on this cost and productivity.
+
 > [[Hire 1 person->planning_scene_hire_1]]
 > [[Hire 2 person->planning_scene_hire_2]]
 > [[Hire 3 person->planning_scene_hire_3]]
+> [[I can't deliver the project, ask for more time->planning_scene_renegotiate_time]]
+> [[I can't deliver the project, ask for more budget->planning_scene_renegotiate_cost]]
+> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+
+
+::planning_scene_try_cheaper_staff
+
+tmp_is_cheaper: false
+tmp_new_random_cost:  200 + random.d25 - random.d25 + 10
+tmp_is_cheaper (var_team_1_cost_per_day > tmp_new_random_cost): true
+var_team_1_cost_per_day (tmp_is_cheaper): tmp_new_random_cost
+var_current_day: var_current_day + 1
+
+--
+
+[if tmp_is_cheaper]
+You were able to find cheaper staff, the cost is now {var_team_1_cost_per_day} per day.
+
+[else]
+You were not to find cheaper staff, the cost is still {var_team_1_cost_per_day} per day.
+
+[continue]
+
+> [[Return to Planning Decision->planning_scene_start]]
+
+
+::planning_scene_renegotiate_time
+
+tmp_remaining_days: var_current_deadline - var_current_day
+--
+
+You have {tmp_remaining_days} remaining to deliver the project
+
+> [[Ask for 3 more days->planning_scene_reneg_time_3]]
+> [[Ask for 6 more days->planning_scene_reneg_time_6]]
+> [[Ask for 9 more days->planning_scene_reneg_time_9]]
+
+::planning_scene_reneg_time_3
+param_num_days_extra_requested: 3
+--
+{embed passage: 'planning_scene_reneg_time_results'}
+
+::planning_scene_reneg_time_6
+param_num_days_extra_requested: 6
+--
+{embed passage: 'planning_scene_reneg_time_results'}
+
+::planning_scene_reneg_time_9
+param_num_days_extra_requested: 9
+--
+{embed passage: 'planning_scene_reneg_time_results'}
+
+
+::planning_scene_reneg_time_results
+tmp_requested_time:                                 param_num_days_extra_requested + var_current_deadline
+tmp_asked_for_too_much:                             tmp_requested_time > var_max_deadline
+var_cust_happy:                                     var_cust_happy - random.d25
+var_cust_happy (tmp_asked_for_too_much):            var_cust_happy - random.d25
+var_current_deadline (tmp_requested_time <= var_max_deadline):  tmp_requested_time
+tmp_remaining_days: var_current_deadline - var_current_day
+--
+
+[if tmp_asked_for_too_much]
+You have asked for too much time, the client is not happy with you.
+
+[else]
+Although the client is not happy to be asked, they allow you these extra days.
+
+[continue]
+The deadline is in {tmp_remaining_days} days
+
+> [[Return to Planning Decision->planning_scene_start]]
+
+
+
+
+
+::planning_scene_renegotiate_cost
+--
+
+> [[Ask for £300 more->planning_scene_reneg_cost_3]]
+> [[Ask for £600 more->planning_scene_reneg_cost_6]]
+> [[Ask for £900 more->planning_scene_reneg_cost_9]]
+
+::planning_scene_reneg_cost_3
+param_cost_extra_requested: 300
+--
+{embed passage: 'planning_scene_reneg_cost_results'}
+
+::planning_scene_reneg_cost_6
+param_cost_extra_requested: 600
+--
+{embed passage: 'planning_scene_reneg_cost_results'}
+
+::planning_scene_reneg_cost_9
+param_cost_extra_requested: 900
+--
+{embed passage: 'planning_scene_reneg_cost_results'}
+
+
+::planning_scene_reneg_cost_results
+tmp_requested_budget:                               param_cost_extra_requested + var_current_budget
+tmp_asked_for_too_much:                             tmp_requested_budget > var_max_budget
+var_cust_happy:                                     var_cust_happy - random.d25
+var_cust_happy (tmp_asked_for_too_much):            var_cust_happy - random.d25
+var_current_budget (tmp_requested_budget <= var_max_budget):  tmp_requested_budget
+--
+
+[if tmp_asked_for_too_much]
+You have asked for too much money, the client is not happy with you.
+
+[else]
+Although the client is not happy to be asked, they will give you this extra money to complete the project.
+
+[continue]
+
+> [[Return to Planning Decision->planning_scene_start]]
+
 
 ::planning_scene_hire_1
 var_num_staff:  1
