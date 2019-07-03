@@ -24,6 +24,8 @@ var_team_1_cost_per_day:    200 + random.d50 - random.d25
 var_work_complete:          0
 var_prev_day_work_complete: 0
 
+var_project_complete:       false
+
 init_has_learned_deadline:       false
 init_has_learned_budget:         false
 init_has_learned_scope:          false
@@ -41,7 +43,9 @@ config.header.center: '{ui_room} - {ui_phase}'
 
 Description of simulator
 
-[[SKIP->scene_jump]]
+<!--[[SKIP->scene_jump]]-->
+
+
 [[Start->init_scene_options]]
 
 
@@ -310,13 +314,21 @@ config.header.center:     '{ui_room} - {ui_phase}: Day {var_current_day}'
 
 var_current_day:          var_current_day + 1
 
-tmp_yesterdays_work_complete: var_work_complete
-tmp_work_done_adjuster:     (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
-tmp_work_completed_today:   (var_num_staff * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_staff
+tmp_yesterdays_work_complete:                                        var_work_complete
+tmp_work_done_adjuster:                                              (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
+tmp_work_completed_today:                                            (var_num_staff * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_staff
 
-var_work_complete:          var_work_complete + tmp_work_completed_today
+var_work_complete:                                                   var_work_complete + tmp_work_completed_today
 
+var_project_complete (var_work_complete >= var_current_scope):       true      
 --
+
+[if var_project_complete]
+You have finished the project!
+
+> [[Closure_Phase]]
+
+[else]
 
 [JavaScript]
 
@@ -334,3 +346,8 @@ if (rooms_completed > 1) {
 
 
 > [[Move to the next day->execution_scene_hub]]
+
+
+::Closure_Phase
+--
+Well done
