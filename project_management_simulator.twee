@@ -12,6 +12,7 @@ c_work_rand_range:  0.05
 
 var_current_scope: 10 + random.d10
 
+sys_show_help:              false
 var_current_budget:         var_current_scope * 200 + (random.d100 * 10)
 var_max_budget:             var_current_budget + (random.d100 * 10)
 var_current_deadline:       var_current_scope + random.d5
@@ -20,46 +21,58 @@ var_current_day:            0
 var_current_qual:           100
 var_cust_happy:             100
 var_num_workers:            0
-var_team_1_cost_per_day:    200 + random.d50 - random.d25
+var_team_1_cost_per_day:    200 + random.d25 - random.d10
 var_work_complete:          0
 var_prev_day_work_complete: 0
 var_running_cost:           0
 
 var_project_complete:       false
 
-init_has_learned_deadline:       false
-init_has_learned_budget:         false
-init_has_learned_scope:          false
-init_has_discussed_scope_2:      false
-
+init_has_learned_deadline:         false
+init_has_learned_budget:           false
+init_has_learned_scope:            false
+init_has_discussed_scope_2:        false
+init_has_asked_for_extension_time: false
+init_has_asked_for_extension_cost: false
+  
 ui_title: 'Project Management Simulator'
 ui_phase: 'Initiation'
-ui_room: 'room-name'
+ui_room: 'Intro'
 
-config.header.center: '{ui_room} - {ui_phase}'
+config.header.center:     '{ui_room} - {ui_phase}: Day {var_current_day}'
 
 --
 [align center]
 # {ui_title}
+[continue]
 
+[align center]
 Description of simulator
+[continue]
 
-[[SKIP->scene_jump]]
+> [[Start->init_scene_options]]
+> [[Start (with help)->init_scene_options_help]]
+> [[Skip->scene_jump]] 
 
-
-[[Start->init_scene_options]]
-
-
-:: scene_jump
+::scene_jump
 var_num_staff: 1
 --
-[[execution_scene_hub]]
+[[planning_scene_start]]
 
-:: init_scene_options
-ui_room: ''
+
+::init_scene_options_help
+sys_show_help:              true
+--
+{embed passage: 'init_scene_options'}
+
+
+::init_scene_options
+ui_room: 'Discussing the project with the client'
 --
 
-_discussing the project_
+[if sys_show_help]
+_Help: Before you agree to manage the project you need to understand the constraints that you will have to work within. These will set the parameters for your planning and monitoring._
+[continue]
 
 [unless init_has_learned_budget]
 Ask [["Discuss the budget for this project?"->init_scene_learn_budget]]
@@ -83,14 +96,14 @@ init_has_learned_budget:   true
 --
 Budget is £{var_current_budget}, with a little flexibility if absolutely necessary.
 
-[['Return'->init_scene_options]]
+{back link, label: 'Back'}
 
 :: init_scene_learn_deadline
 init_has_learned_deadline: true
 --
 Deadline is in {var_current_deadline} days, with a little flexibility if absolutely necessary.
 
-[['Return'->init_scene_options]]
+{back link, label: 'Back'}
 
 :: init_scene_disuss_scope
 ui_room: ''
@@ -131,6 +144,11 @@ Are you happy to do this project for the available budget and deadline?
 ::init_scene_convince_no
 ui_room: 'Decide not to do the project'
 --
+
+[if sys_show_help]
+_Help: it's common for a project to not be feasible. In these cases it's better to avoid doing the project than wasting everyone's time trying. As long as you're sure you couldn't complete the project in the given constraints, you have made the right decision.
+[continue]
+
 Agree not to do the project
 _end_
 
@@ -146,6 +164,11 @@ Planning Phase
 ui_phase: 'Planning'
 ui_room: 'Start of Planning'
 
+
+tmp_show_hire_only:       init_has_asked_for_extension_time && init_has_asked_for_extension_cost
+tmp_show_extra_time_only: !init_has_asked_for_extension_time && init_has_asked_for_extension_cost
+tmp_show_extra_cost_only: init_has_asked_for_extension_time && !init_has_asked_for_extension_cost
+tmp_show_all:             !init_has_asked_for_extension_time && !init_has_asked_for_extension_cost
 --
 
 How many people do you want to join your team for this project?  
@@ -158,15 +181,29 @@ write("Three people can complete approximately " + (3 * Math.pow(c_team_ineff, 2
 
 [continue]
 
-Plan how you will deliver the project based on this cost and productivity.
+[if sys_show_help]
+_Help: In this simple simulation the amount of work that can be completed does not increase steadily for increasing number of workers. This is to simulate the fact that dependencies make it hard to schedule tasks to that everyone is busy at the same time._
+[continue]
 
+[if tmp_show_all]
 > [[Hire staff for the project->planning_scene_hire_staff_choice]]
-> [[Hire 1 person->planning_scene_hire_1]]
-> [[Hire 2 person->planning_scene_hire_2]]
-> [[Hire 3 person->planning_scene_hire_3]]
+> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
 > [[I can't deliver the project, ask for more time->planning_scene_renegotiate_time]]
 > [[I can't deliver the project, ask for more budget->planning_scene_renegotiate_cost]]
+
+[if tmp_show_hire_only]
+> [[Hire staff for the project->planning_scene_hire_staff_choice]]
 > [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+
+[if tmp_show_extra_time_only]
+> [[Hire staff for the project->planning_scene_hire_staff_choice]]
+> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+> [[I can't deliver the project, ask for more time->planning_scene_renegotiate_time]]
+
+[if tmp_show_extra_cost_only]
+> [[Hire staff for the project->planning_scene_hire_staff_choice]]
+> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+> [[I can't deliver the project, ask for more budget->planning_scene_renegotiate_cost]]
 
 
 ::planning_scene_hire_staff_choice
@@ -174,17 +211,26 @@ Plan how you will deliver the project based on this cost and productivity.
 
 Hire {dropdown menu for: 'var_num_staff_text', choices: ['1', '2', '3']} staff
 
-> [[Hire that many staff->planning_scene_complete_fire]]
+> [[Hire that many staff->planning_scene_complete_hire]]
 > {back link, label: 'Back'}
 
 
-::planning_scene_complete_fire
+::planning_scene_complete_hire
 var_num_staff (var_num_staff_text == '1'): 1
 var_num_staff (var_num_staff_text == '2'): 2
 var_num_staff (var_num_staff_text == '3'): 3
 --
 
 You hired {var_num_staff} staff.
+
+[if sys_show_help]
+_Help: By the end of the planning phase you should know how much work needs to be completed on each day of the project, and how many people you will need each day to complete it._
+[continue]
+
+You have completed the planning phase, click below to complete the first day of the execution phase
+
+[[Move to the end of the next day->execution_scene_hub]]
+
 
 ::planning_scene_try_cheaper_staff
 
@@ -214,25 +260,19 @@ tmp_remaining_days: var_current_deadline - var_current_day
 
 You have {tmp_remaining_days} remaining to deliver the project
 
-> [[Ask for 3 more days->planning_scene_reneg_time_3]]
-> [[Ask for 6 more days->planning_scene_reneg_time_6]]
-> [[Ask for 9 more days->planning_scene_reneg_time_9]]
+Number of extra days to ask for: {dropdown menu for: 'tmp_num_extra_days', choices: ['3', '6', '9']}
 
-::planning_scene_reneg_time_3
-param_num_days_extra_requested: 3
+> [[Request more days->planning_scene_request_days]]
+> {back link, label: 'Back'}
+
+::planning_scene_request_days
+init_has_asked_for_extension_time: true
+param_num_days_extra_requested (tmp_num_extra_days == '3'): 3
+param_num_days_extra_requested (tmp_num_extra_days == '6'): 6
+param_num_days_extra_requested (tmp_num_extra_days == '9'): 9
 --
-{embed passage: 'planning_scene_reneg_time_results'}
 
-::planning_scene_reneg_time_6
-param_num_days_extra_requested: 6
---
 {embed passage: 'planning_scene_reneg_time_results'}
-
-::planning_scene_reneg_time_9
-param_num_days_extra_requested: 9
---
-{embed passage: 'planning_scene_reneg_time_results'}
-
 
 ::planning_scene_reneg_time_results
 tmp_requested_time:                                 param_num_days_extra_requested + var_current_deadline
@@ -258,25 +298,20 @@ The deadline is in {tmp_remaining_days} days
 ::planning_scene_renegotiate_cost
 --
 
-> [[Ask for £300 more->planning_scene_reneg_cost_3]]
-> [[Ask for £600 more->planning_scene_reneg_cost_6]]
-> [[Ask for £900 more->planning_scene_reneg_cost_9]]
+Amount of extra money to request : {dropdown menu for: 'tmp_num_extra_money', choices: ['£300', '£600', '£900']}
 
-::planning_scene_reneg_cost_3
-param_cost_extra_requested: 300
+> [[Request a higher budget->planning_scene_request_money]]
+> {back link, label: 'Back'}
+
+
+::planning_scene_request_money
+init_has_asked_for_extension_cost: true
+param_cost_extra_requested (tmp_num_extra_money == '£300'): 300
+param_cost_extra_requested (tmp_num_extra_money == '£600'): 600
+param_cost_extra_requested (tmp_num_extra_money == '£900'): 900
 --
-{embed passage: 'planning_scene_reneg_cost_results'}
 
-::planning_scene_reneg_cost_6
-param_cost_extra_requested: 600
---
 {embed passage: 'planning_scene_reneg_cost_results'}
-
-::planning_scene_reneg_cost_9
-param_cost_extra_requested: 900
---
-{embed passage: 'planning_scene_reneg_cost_results'}
-
 
 ::planning_scene_reneg_cost_results
 tmp_requested_budget:                               param_cost_extra_requested + var_current_budget
@@ -297,40 +332,6 @@ Although the client is not happy to be asked, they will give you this extra mone
 > [[Return to Planning Decision->planning_scene_start]]
 
 
-::planning_scene_hire_1
-var_num_staff:  1
---
-
-You have chosen to hire {var_num_staff} person for this project
-
-{embed passage: 'planning_scene_hire_end'}
-
-
-::planning_scene_hire_2
-var_num_staff:  2
---
-
-You have chosen to hire {var_num_staff} people for this project
-
-{embed passage: 'planning_scene_hire_end'}
-
-::planning_scene_hire_3
-var_num_staff:  3
---
-
-You have chosen to hire {var_num_staff} people for this project
-
-{embed passage: 'planning_scene_hire_end'}
-
-
-::planning_scene_hire_end
---
-
-This is the end of the planning phase.
-
-> [[Move to the next day->execution_scene_hub]]
-
-
 <!-- 
 *******************************
 Execution Loop
@@ -338,8 +339,6 @@ Execution Loop
 -->
 
 ::execution_scene_hub
-
-config.header.center:     '{ui_room} - {ui_phase}: Day {var_current_day}'
 
 tmp_yesterdays_work_complete:    var_work_complete
 tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
