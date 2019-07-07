@@ -12,6 +12,7 @@ c_work_rand_range:  0.05
 
 var_current_scope: 10 + random.d10
 
+var_staff_update_days:      -1
 sys_show_help:              false
 var_current_budget:         var_current_scope * 200 + (random.d100 * 10)
 var_max_budget:             var_current_budget + (random.d100 * 10)
@@ -25,6 +26,7 @@ var_team_1_cost_per_day:    200 + random.d25 - random.d10
 var_work_complete:          0
 var_prev_day_work_complete: 0
 var_running_cost:           0
+
 
 var_project_complete:       false
 
@@ -346,16 +348,52 @@ tmp_event (tmp_event_rand_value < 10):                               'no_event'
 tmp_event (tmp_event_rand_value >= 10 && tmp_event_rand_value < 15): 'event_1'
 tmp_event (tmp_event_rand_value >= 15 && tmp_event_rand_value < 20): 'event_2'
 tmp_event (tmp_event_rand_value >= 20 && tmp_event_rand_value < 25): 'event_3' 
+var_staff_update_days (var_staff_update_days >= 0): var_staff_update_days - 1
+var_num_staff (var_staff_update_days == 0):         var_next_num_staff
 --
 
-# Do some PMing
+# Project Management Options
 
-Event {tmp_event}
+You currently have {var_num_staff} worker(s) on the project.
+
+[if var_staff_update_days > 0 && var_next_num_staff != var_num_staff]
+The number of staff will change to {var_next_num_staff} in {var_staff_update_days} day(s).
+[continue]
 
 > [[Change the number of staff->execution_scene_change_staff]]
 > [[Ask for more time->execution_scene_ask_time]]
 > [[Ask for more cost->execution_scene_ask_cost]]
 > [[No Action Required->execution_scene_test_event_{tmp_event}]]
+
+<!--
+*************************
+Execution PM Actions
+*************************
+-->
+
+::execution_scene_change_staff
+--
+Hire {dropdown menu for: 'var_num_staff_text', choices: ['1', '2', '3']} staff
+
+> [[Hire that many staff->execution_scene_complete_hire]]
+> {back link, label: 'Back'}
+
+::execution_scene_complete_hire
+var_next_num_staff (var_num_staff_text == '1'): 1
+var_next_num_staff (var_num_staff_text == '2'): 2
+var_next_num_staff (var_num_staff_text == '3'): 3
+var_staff_update_days:                          2
+--
+
+You have chosen to work with {var_next_num_staff} staff. This change will happen in {var_staff_update_days} days.
+
+[[Move to the end of the next day->execution_scene_end_of_day]]
+
+<!--
+*************************
+Execution Events
+*************************
+-->
 
 ::execution_scene_test_event_no_event
 --
