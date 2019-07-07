@@ -57,7 +57,7 @@ Description of simulator
 ::scene_jump
 var_num_staff: 1
 --
-[[planning_scene_start]]
+[[execution_scene_end_of_day]]
 
 
 ::init_scene_options_help
@@ -229,7 +229,7 @@ _Help: By the end of the planning phase you should know how much work needs to b
 
 You have completed the planning phase, click below to complete the first day of the execution phase
 
-[[Move to the end of the next day->execution_scene_hub]]
+[[Move to the end of the next day->execution_scene_end_of_day]]
 
 
 ::planning_scene_try_cheaper_staff
@@ -239,7 +239,6 @@ tmp_new_random_cost:  200 + random.d25 - random.d25 + 10
 tmp_is_cheaper (var_team_1_cost_per_day > tmp_new_random_cost): true
 var_team_1_cost_per_day (tmp_is_cheaper): tmp_new_random_cost
 var_current_day: var_current_day + 1
-
 --
 
 [if tmp_is_cheaper]
@@ -338,7 +337,49 @@ Execution Loop
 *******************************
 -->
 
-::execution_scene_hub
+
+::execution_scene_pm_options
+ui_room:                'Project Management Opportunities'
+tmp_event_rand_value:   random.d25
+
+tmp_event (tmp_event_rand_value < 10):                               'no_event'
+tmp_event (tmp_event_rand_value >= 10 && tmp_event_rand_value < 15): 'event_1'
+tmp_event (tmp_event_rand_value >= 15 && tmp_event_rand_value < 20): 'event_2'
+tmp_event (tmp_event_rand_value >= 20 && tmp_event_rand_value < 25): 'event_3' 
+--
+
+# Do some PMing
+
+Event {tmp_event}
+
+> [[Change the number of staff->execution_scene_change_staff]]
+> [[Ask for more time->execution_scene_ask_time]]
+> [[Ask for more cost->execution_scene_ask_cost]]
+> [[No Action Required->execution_scene_test_event_{tmp_event}]]
+
+::execution_scene_test_event_no_event
+--
+# No Event
+[[End of the day->execution_scene_end_of_day]]
+
+::execution_scene_test_event_event_1
+--
+# Event 1
+[[End of the day->execution_scene_end_of_day]]
+
+::execution_scene_test_event_event_2
+--
+# Event 2
+[[End of the day->execution_scene_end_of_day]]
+
+::execution_scene_test_event_event_3
+--
+# Event 3
+[[End of the day->execution_scene_end_of_day]]
+
+
+
+::execution_scene_end_of_day
 
 tmp_yesterdays_work_complete:    var_work_complete
 tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
@@ -352,7 +393,6 @@ var_project_complete (var_work_complete >= var_current_scope):       true
 var_current_day:                 var_current_day + 1
 tmp_past_deadline:               false
 tmp_past_deadline (var_current_deadline < var_current_day):          true
-
 --
 
 # Project Update: Day {var_current_day}
@@ -376,8 +416,7 @@ write(Math.floor(var_work_complete) - Math.floor(tmp_yesterdays_work_complete))
 
 [continue]
 
-> [[Move to the next day->execution_scene_hub]]
-
+> [[Start Next Day->execution_scene_pm_options]]
 
 <!-- 
 *******************************
