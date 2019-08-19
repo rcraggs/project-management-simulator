@@ -9,6 +9,7 @@ Project Manager Simulator
 
 :: Start 
 
+c_game_version:     "dev"
 c_team_ineff:       0.95
 c_ineff_makeup:     1 - c_team_ineff
 c_work_rand_range:  0.05
@@ -46,6 +47,7 @@ ui_phase: 'Initiation'
 ui_room: 'Intro'
 
 config.header.center:     '{ui_room} - {ui_phase}: Day {var_current_day}'
+config.footer.center:     'Version: {c_game_version}'
 
 --
 [align center]
