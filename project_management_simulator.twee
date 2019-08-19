@@ -1,14 +1,18 @@
+
+:: StoryData
+{
+  "ifid": "cf332bda-daec-4957-8b90-6e2f43f9936d"
+}
+
 :: StoryTitle
 Project Manager Simulator
-
-:: StorySettings
-ifid:cf332bda-daec-4957-8b90-6e2f43f9936d
 
 :: Start 
 
 c_team_ineff:       0.95
 c_ineff_makeup:     1 - c_team_ineff
 c_work_rand_range:  0.05
+c_change_during_exec_happy_cost: 10
 
 var_current_scope: 10 + random.d10
 
@@ -231,7 +235,7 @@ _Help: By the end of the planning phase you should know how much work needs to b
 
 You have completed the planning phase, click below to complete the first day of the execution phase
 
-[[Move to the end of the next day->execution_scene_end_of_day]]
+[[Start Next Day->execution_scene_end_of_day]]
 
 
 ::planning_scene_try_cheaper_staff
@@ -339,7 +343,6 @@ Execution Loop
 *******************************
 -->
 
-
 ::execution_scene_pm_options
 ui_room:                'Project Management Opportunities'
 tmp_event_rand_value:   random.d25
@@ -387,7 +390,76 @@ var_staff_update_days:                          2
 
 You have chosen to work with {var_next_num_staff} staff. This change will happen in {var_staff_update_days} days.
 
-[[Move to the end of the next day->execution_scene_end_of_day]]
+[[Start Next Day->execution_scene_test_event_{tmp_event}]]
+
+
+::execution_scene_ask_time
+--
+Number of extra days to ask for: {dropdown menu for: 'tmp_num_extra_days', choices: ['3', '6', '9']}
+
+> [[Request more days->exeuction_scene_request_days]]
+> {back link, label: 'Back'}
+
+::exeuction_scene_request_days
+param_num_days_extra_requested (tmp_num_extra_days == '3'): 3
+param_num_days_extra_requested (tmp_num_extra_days == '6'): 6
+param_num_days_extra_requested (tmp_num_extra_days == '9'): 9
+--
+
+{embed passage: 'execution_scene_reneg_time_results'}
+
+::execution_scene_reneg_time_results
+tmp_requested_time:                                 param_num_days_extra_requested + var_current_deadline
+tmp_asked_for_too_much:                             tmp_requested_time > var_max_deadline
+var_cust_happy:                                     var_cust_happy - (random.d25 + c_change_during_exec_happy_cost)
+var_cust_happy (tmp_asked_for_too_much):            var_cust_happy - random.d25
+var_current_deadline (tmp_requested_time <= var_max_deadline):  tmp_requested_time
+tmp_remaining_days: var_current_deadline - var_current_day
+--
+
+[if tmp_asked_for_too_much]
+You have asked for too much time, the client is not happy with you.
+
+[else]
+Although the client is not happy to be asked, they allow you these extra days.
+[continue]
+
+> [[Continue Project->execution_scene_test_event_{tmp_event}]]
+
+::execution_scene_ask_cost
+--
+
+Amount of extra money to request : {dropdown menu for: 'tmp_num_extra_money', choices: ['£300', '£600', '£900']}
+
+> [[Request a higher budget->execution_scene_request_money]]
+> {back link, label: 'Back'}
+
+
+::execution_scene_request_money
+param_cost_extra_requested (tmp_num_extra_money == '£300'): 300
+param_cost_extra_requested (tmp_num_extra_money == '£600'): 600
+param_cost_extra_requested (tmp_num_extra_money == '£900'): 900
+--
+
+{embed passage: 'execution_scene_reneg_cost_results'}
+
+::execution_scene_reneg_cost_results
+tmp_requested_budget:                               param_cost_extra_requested + var_current_budget
+tmp_asked_for_too_much:                             tmp_requested_budget > var_max_budget
+var_cust_happy:                                     var_cust_happy - (random.d25 + c_change_during_exec_happy_cost)
+var_cust_happy (tmp_asked_for_too_much):            var_cust_happy - random.d25
+var_current_budget (tmp_requested_budget <= var_max_budget):  tmp_requested_budget
+--
+
+[if tmp_asked_for_too_much]
+You have asked for too much money, the client is not happy with you.
+
+[else]
+Although the client is not happy to be asked, they will give you this extra money to complete the project.
+
+[continue]
+
+> [[Continue Project->execution_scene_test_event_{tmp_event}]]
 
 <!--
 *************************
@@ -415,9 +487,17 @@ Execution Events
 # Event 3
 [[End of the day->execution_scene_end_of_day]]
 
-
-
 ::execution_scene_end_of_day
+
+ui_room:                'Project Management Opportunities'
+tmp_event_rand_value:   random.d25
+
+tmp_event (tmp_event_rand_value < 10):                               'no_event'
+tmp_event (tmp_event_rand_value >= 10 && tmp_event_rand_value < 15): 'event_1'
+tmp_event (tmp_event_rand_value >= 15 && tmp_event_rand_value < 20): 'event_2'
+tmp_event (tmp_event_rand_value >= 20 && tmp_event_rand_value < 25): 'event_3' 
+var_staff_update_days (var_staff_update_days >= 0): var_staff_update_days - 1
+var_num_staff (var_staff_update_days == 0):         var_next_num_staff
 
 tmp_yesterdays_work_complete:    var_work_complete
 tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
@@ -431,6 +511,7 @@ var_project_complete (var_work_complete >= var_current_scope):       true
 var_current_day:                 var_current_day + 1
 tmp_past_deadline:               false
 tmp_past_deadline (var_current_deadline < var_current_day):          true
+tmp_will_continue:               !tmp_past_deadline && !var_project_complete
 --
 
 # Project Update: Day {var_current_day}
@@ -445,16 +526,28 @@ You have finished the project!
 
 > [[closure_scene]]
 
-[else]
+[if tmp_will_continue]
 
-Room(s) completed today: 
+You currently have {var_num_staff} worker(s) on the project. 
 
-[JavaScript; append]
-write(Math.floor(var_work_complete) - Math.floor(tmp_yesterdays_work_complete))
-
+[if var_staff_update_days > 0 && var_next_num_staff != var_num_staff]
+The number of staff will change to {var_next_num_staff} in {var_staff_update_days} day(s).
 [continue]
 
-> [[Start Next Day->execution_scene_pm_options]]
+[if tmp_will_continue]
+
+[JavaScript]
+write("Room(s) completed today: " + (Math.floor(var_work_complete) - Math.floor(tmp_yesterdays_work_complete)))
+[continue]
+
+[if tmp_will_continue]
+
+> [[Start Next Day->execution_scene_test_event_{tmp_event}]]
+> [[Change the number of staff->execution_scene_change_staff]]
+> [[Ask for more time->execution_scene_ask_time]]
+> [[Ask for more cost->execution_scene_ask_cost]]
+
+
 
 <!-- 
 *******************************
@@ -463,6 +556,11 @@ Closure Phase
 -->
 
 ::closure_scene
+tmp_profit:      var_current_budget - var_running_cost
+tmp_loss:        var_running_cost - var_current_budget
+tmp_overbudget:  tmp_profit < 0
+tmp_underbudget: tmp_profit > 0
+tmp_onbudget:    tmp_profit == 0
 --
 
 Client Happiness: {var_cust_happy}%
@@ -472,3 +570,15 @@ write("Proportion of the rooms completed: " + Math.floor(var_work_complete) + " 
 [continue]
 
 The project cost: £{var_running_cost}
+
+if [tmp_underbudget]
+
+The project was £{tmp_profit} under budget
+
+if [tmp_overbudget]
+
+The project was £{tmp_loss} over budget
+
+if [tmp_onbudget]
+
+The project was exactly on budget
