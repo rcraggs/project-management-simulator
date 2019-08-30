@@ -8,14 +8,15 @@
 Project Manager Simulator
 
 :: Start 
-
-c_game_version:     "dev"
-c_team_ineff:       0.95
-c_ineff_makeup:     1 - c_team_ineff
-c_work_rand_range:  0.05
+c_game_version:        "dev"
+c_team_ineff:          0.8
+c_ineff_makeup:        1 - c_team_ineff
+c_work_rand_range:     0.1
 c_change_during_exec_happy_cost: 10
+c_base_rooms_per_day:  0.5
 
 var_current_scope: 10 + random.d10
+
 
 var_staff_update_days:      -1
 sys_show_help:              false
@@ -24,14 +25,12 @@ var_max_budget:             var_current_budget + (random.d100 * 10)
 var_current_deadline:       var_current_scope + random.d5
 var_max_deadline:           var_current_deadline + random.d10
 var_current_day:            0
-var_current_qual:           100
 var_cust_happy:             100
 var_num_workers:            0
-var_team_1_cost_per_day:    200 + random.d25 - random.d10
+var_team_1_cost_per_day:    80 + random.d10 - random.d10
 var_work_complete:          0
 var_prev_day_work_complete: 0
 var_running_cost:           0
-
 
 var_project_complete:       false
 
@@ -56,6 +55,9 @@ config.footer.center:     'Version: {c_game_version}'
 
 [align center]
 Description of simulator
+
+Report any bugs in our [Gitlab Issue Tracker](https://campus.cs.le.ac.uk/gitlab/rc340/project-management-simulator/issues)
+
 [continue]
 
 > [[Start->init_scene_options]]
@@ -183,8 +185,8 @@ How many people do you want to join your team for this project?
 
 [JavaScript]
 write("Each person costs £" + var_team_1_cost_per_day.toFixed(0) + " per day.</br></br>");
-write("One person can complete approximately 1 room per day</br>");
-write("Two people can complete approximately " + (2 * c_team_ineff).toFixed(2)  + " room per day</br>");
+write("One person can complete approximately " + c_base_rooms_per_day + " room per day</br>");
+write("Two people can complete approximately " + (2 * c_team_ineff * c_base_rooms_per_day).toFixed(2)  + " room per day</br>");
 write("Three people can complete approximately " + (3 * Math.pow(c_team_ineff, 2)).toFixed(2)  + " room per day</br>");
 
 [continue]
@@ -243,7 +245,7 @@ You have completed the planning phase, click below to complete the first day of 
 ::planning_scene_try_cheaper_staff
 
 tmp_is_cheaper: false
-tmp_new_random_cost:  200 + random.d25 - random.d25 + 10
+tmp_new_random_cost:  78 + random.d10 - random.d10
 tmp_is_cheaper (var_team_1_cost_per_day > tmp_new_random_cost): true
 var_team_1_cost_per_day (tmp_is_cheaper): tmp_new_random_cost
 var_current_day: var_current_day + 1
@@ -503,7 +505,7 @@ var_num_staff (var_staff_update_days == 0):         var_next_num_staff
 
 tmp_yesterdays_work_complete:    var_work_complete
 tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
-tmp_work_completed_today:        (var_num_staff * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_staff
+tmp_work_completed_today:        (var_num_staff * c_base_rooms_per_day * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_staff
 
 var_work_complete:               var_work_complete + tmp_work_completed_today
 var_running_cost:                var_running_cost + var_team_1_cost_per_day * var_num_staff
@@ -562,7 +564,7 @@ tmp_profit:      var_current_budget - var_running_cost
 tmp_loss:        var_running_cost - var_current_budget
 tmp_overbudget:  tmp_profit < 0
 tmp_underbudget: tmp_profit > 0
-tmp_onbudget:    tmp_profit == 0
+tmp_onbudget:    tmp_profit == 0 
 --
 
 Client Happiness: {var_cust_happy}%
