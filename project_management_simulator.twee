@@ -14,9 +14,15 @@ c_ineff_makeup:        1 - c_team_ineff
 c_work_rand_range:     0.1
 c_change_during_exec_happy_cost: 10
 c_base_rooms_per_day:  0.5
+c_basic_cost_per_room: 235
+c_basic_days_per_room: 2
 
 var_current_scope: 10 + random.d10
 
+var_event_1_happened:  false
+var_event_2_happened:  false
+tmp_event_1_happening: false
+tmp_notification_message: "This is the end of your first day on the project"
 
 var_staff_update_days:      -1
 sys_show_help:              false
@@ -66,6 +72,7 @@ Report any bugs in our [Gitlab Issue Tracker](https://campus.cs.le.ac.uk/gitlab/
 
 ::scene_jump
 var_num_staff: 1
+tmp_notification_message: "You Jumped here by magic"
 --
 [[execution_scene_end_of_day]]
 
@@ -286,8 +293,8 @@ param_num_days_extra_requested (tmp_num_extra_days == '9'): 9
 ::planning_scene_reneg_time_results
 tmp_requested_time:                                 param_num_days_extra_requested + var_current_deadline
 tmp_asked_for_too_much:                             tmp_requested_time > var_max_deadline
-var_cust_happy:                                     var_cust_happy - random.d25
-var_cust_happy (tmp_asked_for_too_much):            var_cust_happy - random.d25
+var_cust_happy:                                     var_cust_happy - (10 + random.d12)
+var_cust_happy (tmp_asked_for_too_much):            var_cust_happy - (10 + random.d12)
 var_current_deadline (tmp_requested_time <= var_max_deadline):  tmp_requested_time
 tmp_remaining_days: var_current_deadline - var_current_day
 --
@@ -349,14 +356,10 @@ Execution Loop
 
 ::execution_scene_pm_options
 ui_room:                'Project Management Opportunities'
-tmp_event_rand_value:   random.d25
 
-tmp_event (tmp_event_rand_value < 10):                               'no_event'
-tmp_event (tmp_event_rand_value >= 10 && tmp_event_rand_value < 15): 'event_1'
-tmp_event (tmp_event_rand_value >= 15 && tmp_event_rand_value < 20): 'event_2'
-tmp_event (tmp_event_rand_value >= 20 && tmp_event_rand_value < 25): 'event_3' 
 var_staff_update_days (var_staff_update_days >= 0): var_staff_update_days - 1
 var_num_staff (var_staff_update_days == 0):         var_next_num_staff
+tmp_notification_message: "The first day of the project is complete"
 --
 
 # Project Management Options
@@ -370,7 +373,7 @@ The number of staff will change to {var_next_num_staff} in {var_staff_update_day
 > [[Change the number of staff->execution_scene_change_staff]]
 > [[Ask for more time->execution_scene_ask_time]]
 > [[Ask for more cost->execution_scene_ask_cost]]
-> [[No Action Required->execution_scene_test_event_{tmp_event}]]
+> [[No Action Required->execution_scene_test_event_no_event]]
 
 <!--
 *************************
@@ -394,7 +397,7 @@ var_staff_update_days:                          2
 
 You have chosen to work with {var_next_num_staff} staff. This change will happen in {var_staff_update_days} days.
 
-[[Start Next Day->execution_scene_test_event_{tmp_event}]]
+[[Start Next Day->execution_scene_test_event_no_event]]
 
 
 ::execution_scene_ask_time
@@ -428,7 +431,7 @@ You have asked for too much time, the client is not happy with you.
 Although the client is not happy to be asked, they allow you these extra days.
 [continue]
 
-> [[Continue Project->execution_scene_test_event_{tmp_event}]]
+> [[Continue Project->execution_scene_test_event_no_event]]
 
 ::execution_scene_ask_cost
 --
@@ -463,49 +466,104 @@ Although the client is not happy to be asked, they will give you this extra mone
 
 [continue]
 
-> [[Continue Project->execution_scene_test_event_{tmp_event}]]
+> [[Continue Project->execution_scene_test_event_no_event]]
 
 <!--
 *************************
 Execution Events
 *************************
+
+*************************
+Event 1 = Staff member ill for the day
+Event 2 = Cust change mind - re-do x rooms
+Event 3 = Can spend to make cust more happy
+*************************
+
 -->
 
 ::execution_scene_test_event_no_event
+tmp_notification_message: "Nothing interesting happened today"
 --
-# No Event
-[[End of the day->execution_scene_end_of_day]]
+{embed passage: 'execution_scene_end_of_day'}
 
 ::execution_scene_test_event_event_1
+var_event_1_happened:       true
+tmp_event_1_happening:      true
+tmp_notification_message:   "Less work was achieved today"
 --
-# Event 1
+# Project Notification!
+
+A worker was hung-over today and didn't manage to get any work done.
+
 [[End of the day->execution_scene_end_of_day]]
 
 ::execution_scene_test_event_event_2
+tmp_num_rooms_redo: random.d4
+tmp_additional_budget_for_redo: c_basic_cost_per_room * tmp_num_rooms_redo
+tmp_additional_days_for_redo:   c_basic_days_per_room * tmp_num_rooms_redo
+
+var_current_budget:             var_current_budget + tmp_additional_budget_for_redo    
+var_max_budget:                 var_max_budget + tmp_additional_budget_for_redo
+var_current_deadline:           var_current_deadline + tmp_additional_days_for_redo
+var_max_deadline:               var_max_deadline + tmp_additional_days_for_redo
+var_event_2_happened:           true
+tmp_notification_message:       "You now have a bigger budget and a longer deadline, but more work to do."
 --
-# Event 2
+# Project Notification!
+
+The customer called. They've changed their mind about the colour of {tmp_num_rooms_redo} of the rooms. They would like you to re-do these rooms. 
+
+[JavaScript]
+write("They will give you another £" + Math.floor(tmp_additional_budget_for_redo) + " and another " + Math.floor(tmp_additional_days_for_redo) + " days to complete the project")
+[continue]
+
+
 [[End of the day->execution_scene_end_of_day]]
 
 ::execution_scene_test_event_event_3
 --
-# Event 3
-[[End of the day->execution_scene_end_of_day]]
+# Project Notification
+
+One of your workers finds a nice picture that will make the room look great. It will make your client happier although it will cost you £200. Do you want to buy it?
+
+> [[Yes->exec_scene_buy_picture]]
+> [[No->exec_scene_no_picture]]
+
+
+
+::exec_scene_buy_picture
+tmp_notification_message: "You buy the picture and hang it up. The client will be thrilled"
+var_running_cost:         var_running_cost + 200
+var_cust_happy:           100
+--
+{embed passage: 'execution_scene_end_of_day'}
+
+
+::exec_scene_no_picture
+tmp_notification_message: "You decide not to buy the picture"
+--
+{embed passage: 'execution_scene_end_of_day'}
+
+
 
 ::execution_scene_end_of_day
 
 ui_room:                'Project Management Opportunities'
-tmp_event_rand_value:   random.d25
+tmp_event_rand_value:   random.d12
 
-tmp_event (tmp_event_rand_value < 10):                               'no_event'
-tmp_event (tmp_event_rand_value >= 10 && tmp_event_rand_value < 15): 'event_1'
-tmp_event (tmp_event_rand_value >= 15 && tmp_event_rand_value < 20): 'event_2'
-tmp_event (tmp_event_rand_value >= 20 && tmp_event_rand_value < 25): 'event_3' 
+tmp_event (tmp_event_rand_value > 3): 'no_event'
+tmp_event (tmp_event_rand_value == 1): 'event_1'
+tmp_event (tmp_event_rand_value == 2): 'event_2'
+tmp_event (tmp_event_rand_value == 3): 'event_3' 
 var_staff_update_days (var_staff_update_days >= 0): var_staff_update_days - 1
 var_num_staff (var_staff_update_days == 0):         var_next_num_staff
 
+tmp_missing_staff:                          0
+tmp_missing_staff (tmp_event_1_happening):  1
+
 tmp_yesterdays_work_complete:    var_work_complete
 tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
-tmp_work_completed_today:        (var_num_staff * c_base_rooms_per_day * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_staff
+tmp_work_completed_today:        ((var_num_staff-tmp_missing_staff) * c_base_rooms_per_day * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_staff
 
 var_work_complete:               var_work_complete + tmp_work_completed_today
 var_running_cost:                var_running_cost + var_team_1_cost_per_day * var_num_staff
@@ -516,7 +574,11 @@ var_current_day:                 var_current_day + 1
 tmp_past_deadline:               false
 tmp_past_deadline (var_current_deadline < var_current_day):          true
 tmp_will_continue:               !tmp_past_deadline && !var_project_complete
+
+tmp_event_1_happening: false
 --
+
+_{tmp_notification_message}_
 
 # Project Update: Day {var_current_day}
 
