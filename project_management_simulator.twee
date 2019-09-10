@@ -9,7 +9,7 @@ Project Manager Simulator
 
 :: Start 
 c_game_version:        "dev"
-c_team_ineff:          0.8
+c_team_ineff:          0.7
 c_ineff_makeup:        1 - c_team_ineff
 c_work_rand_range:     0.1
 c_change_during_exec_happy_cost: 10
@@ -70,7 +70,6 @@ Report any bugs in our [Gitlab Issue Tracker](https://campus.cs.le.ac.uk/gitlab/
 
 > [[Start->init_scene_options]]
 > [[Start (with help)->init_scene_options_help]]
-> [[TO-REMOVE-Skip->scene_jump]] 
 
 ::scene_jump
 var_num_workers: 1
@@ -178,7 +177,7 @@ ui_room: 'Go/No Discussion'
 
 Based on the constraints you have agreed, do you think you can complete the project. A worker costs approximately £80 per day and can complete approximately {c_base_rooms_per_day} rooms per day.
 
-Are you happy to do this project?
+Are you confident that this project can be successfully completed within the constraints?
 
 > [[Yes->planning_scene_start]]
 > [[No->init_scene_convince_no]]
@@ -212,7 +211,7 @@ tmp_show_all:             !init_has_asked_for_extension_time && !init_has_asked_
 --
 
 [if sys_show_help]
-<span style="color:blue;"> _**Help**: You are at the resourcing part of the project planning phase. To make decisions about resources you must have a plan for what work needs to be completed when._</span>
+<span style="color:blue;"> _**Help**: You are at the resourcing part of the project planning phase. To make decisions about resources you must have a plan for what work needs to be completed when. Do you have a plan for this?_</span>
 [continue]
 
 How many people do you want to join your team for this project?  
@@ -520,11 +519,11 @@ tmp_notification_message: "Nothing interesting happened today"
 ui_room: 'Project event'
 var_event_1_happened:       true
 tmp_event_1_happening:      true
-tmp_notification_message:   "Less work was achieved today"
+tmp_notification_message:   "Scope increase by 2"
 --
 # Project Notification!
 
-A worker was hung-over today and didn't manage to get any work done.
+A worker was hung-over today. Not only did they not complete any useful work, they made a mess of 2 rooms. They will need to be done again. The scope increases by 2. You refuse to pay the worker a day's wage.
 
 [[End of the day->execution_scene_end_of_day]]
 
@@ -602,7 +601,9 @@ tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_wor
 tmp_work_completed_today:        ((var_num_workers-tmp_missing_workers) * c_base_rooms_per_day * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_workers
 
 var_work_complete:               var_work_complete + tmp_work_completed_today
+var_work_complete (tmp_event_1_happening): var_work_complete - 2
 var_running_cost:                var_running_cost + var_team_1_cost_per_day * var_num_workers
+var_running_cost (tmp_event_1_happening): var_running_cost - var_team_1_cost_per_day
 
 var_project_complete (var_work_complete >= var_current_scope):       true
 
@@ -667,7 +668,15 @@ tmp_loss:        var_running_cost - var_current_budget
 tmp_overbudget:  tmp_profit < 0
 tmp_underbudget: tmp_profit > 0
 tmp_onbudget:    tmp_profit == 0 
+tmp_score:       0
+tmp_score (var_cust_happy == 100): tmp_score + 1
+tmp_score (var_cust_happy > 90):   tmp_score + 1
+tmp_score (var_cust_happy > 80):   tmp_score + 1
+tmp_score (tmp_profit):            tmp_score + 1
+tmp_score (tmp_underbudget):       tmp_score + 1 
 --
+
+# Score = {tmp_score} out of 5
 
 Client Happiness: {var_cust_happy}%
 
