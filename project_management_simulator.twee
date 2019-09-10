@@ -24,7 +24,7 @@ var_event_2_happened:  false
 tmp_event_1_happening: false
 tmp_notification_message: "This is the end of your first day on the project"
 
-var_staff_update_days:      -1
+var_workers_update_days:      -1
 sys_show_help:              false
 var_current_budget:         var_current_scope * 200 + (random.d100 * 10)
 var_max_budget:             var_current_budget + (random.d100 * 10)
@@ -51,7 +51,7 @@ ui_title: 'Project Management Simulator'
 ui_phase: 'Initiation'
 ui_room: 'Intro'
 
-config.header.center:     '{ui_room} - {ui_phase}: Day {var_current_day}'
+config.header.center:     '<b>Phase:</b> {ui_phase} - <b>Scene:</b> {ui_room} - <b>Day</b> {var_current_day}'
 config.footer.center:     'Version: {c_game_version}'
 
 --
@@ -60,7 +60,9 @@ config.footer.center:     'Version: {c_game_version}'
 [continue]
 
 [align center]
-Description of simulator
+Practice the skills from the first 5 weeks of CO2201 in a decorating project simulator!
+
+_You manage a team of painters and decorators. You're job is to plan and manage a project to decorate a house for a client and keep the clients happy._
 
 Report any bugs in our [Gitlab Issue Tracker](https://campus.cs.le.ac.uk/gitlab/rc340/project-management-simulator/issues)
 
@@ -68,27 +70,25 @@ Report any bugs in our [Gitlab Issue Tracker](https://campus.cs.le.ac.uk/gitlab/
 
 > [[Start->init_scene_options]]
 > [[Start (with help)->init_scene_options_help]]
-> [[Skip->scene_jump]] 
+> [[TO-REMOVE-Skip->scene_jump]] 
 
 ::scene_jump
-var_num_staff: 1
+var_num_workers: 1
 tmp_notification_message: "You Jumped here by magic"
 --
 [[execution_scene_end_of_day]]
-
 
 ::init_scene_options_help
 sys_show_help:              true
 --
 {embed passage: 'init_scene_options'}
 
-
 ::init_scene_options
 ui_room: 'Discussing the project with the client'
 --
 
 [if sys_show_help]
-_Help: Before you agree to manage the project you need to understand the constraints that you will have to work within. These will set the parameters for your planning and monitoring._
+<span style="color:blue;"> _**Help**: Before you agree to manage a project you need to understand the constraints that you will have to work within. These will set the parameters for your planning and monitoring._</span>
 [continue]
 
 [unless init_has_learned_budget]
@@ -108,52 +108,77 @@ Say [["I think I've learned what I need to know"->init_scene_try_convince_client
   initial deadline = scope + random(0-5)
 
 :: init_scene_learn_budget
-ui_room: ''
+ui_room: 'Speaking to client about the budget'
 init_has_learned_budget:   true
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: The budget is how much money is available to complete the project. In this project, like most projects, most of the cost is paying for workers' time._</span>
+[continue]
+
 Budget is £{var_current_budget}, with a little flexibility if absolutely necessary.
 
 {back link, label: 'Back'}
 
 :: init_scene_learn_deadline
+ui_room: 'Speaking to client about the deadline'
 init_has_learned_deadline: true
 --
-Deadline is in {var_current_deadline} days, with a little flexibility if absolutely necessary.
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: You will get to use the "little flexibility" later in the game._</span>
+[continue]
+
+You must complete the project within {var_current_deadline} days, with a little flexibility if absolutely necessary.
 
 {back link, label: 'Back'}
 
 :: init_scene_disuss_scope
-ui_room: ''
+ui_room: 'Speaking to client about the project scope'
 init_has_learned_scope:   true
 temp_extra_scope_amount:  2 + random.d5
 temp_scope_extra_budget:  temp_extra_scope_amount * (175 + random.d50)
 temp_scope_extra_days:    temp_extra_scope_amount - 2 + random.d4
 --
 
-The current scope is {var_current_scope}.
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: Scope is the amount of work for a project. In this project, it's the number of rooms you must decorate._</span>
+[continue]
 
-Add extra scope of {temp_extra_scope_amount} for extra £{temp_scope_extra_budget} and {temp_scope_extra_days} days.
+You must decorate {var_current_scope} rooms.
+
+We have another {temp_extra_scope_amount} rooms that you can choose to decorate for an extra £{temp_scope_extra_budget} and {temp_scope_extra_days} days. Do you want to add this scope to the project?
 
 > [[Yes->init_scene_add_extra_scope]]
-> [[No->init_scene_options]]
+> [[No->planning_scene_start]]
 
 :: init_scene_add_extra_scope
-ui_room: 'room-name'
+ui_room: 'Adding extra scope'
 var_current_budget:     var_current_budget + temp_scope_extra_budget
 var_current_deadline:   var_current_deadline + temp_scope_extra_days
 var_current_scope:      var_current_scope + temp_extra_scope_amount
 var_max_budget:         var_current_budget + (random.d100 * 10)
 --
 
-Added scope added:
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: as a project manager you must keep track of the constraints._</span>
+[continue]
 
-[[Return->init_scene_options]]
+You have chosen to add these extra rooms to the project scope.
+
+[[Return->planning_scene_start]]
 
 ::init_scene_try_convince_client
 ui_room: 'Go/No Discussion'
 --
 
-Are you happy to do this project for the available budget and deadline?
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: An outcome of the initiation phase is a decision on whether to go ahead with the project._</span>
+[continue]
+
+Based on the constraints you have agreed, do you think you can complete the project. A worker costs approximately £80 per day and can complete approximately {c_base_rooms_per_day} rooms per day.
+
+Are you happy to do this project?
 
 > [[Yes->planning_scene_start]]
 > [[No->init_scene_convince_no]]
@@ -163,10 +188,10 @@ ui_room: 'Decide not to do the project'
 --
 
 [if sys_show_help]
-_Help: it's common for a project to not be feasible. In these cases it's better to avoid doing the project than wasting everyone's time trying. As long as you're sure you couldn't complete the project in the given constraints, you have made the right decision.
+<span style="color:blue;"> _**Help**: _Help: It's common for a project to not be feasible. In these cases it's better to avoid doing the project than wasting everyone's time trying. As long as you're sure you couldn't complete the project in the given constraints, you have made the right decision._</span>
 [continue]
 
-Agree not to do the project
+You decided not to do the project. 
 _end_
 
 <!-- 
@@ -177,16 +202,18 @@ Planning Phase
 
 
 ::planning_scene_start
-
 ui_phase: 'Planning'
 ui_room: 'Start of Planning'
-
 
 tmp_show_hire_only:       init_has_asked_for_extension_time && init_has_asked_for_extension_cost
 tmp_show_extra_time_only: !init_has_asked_for_extension_time && init_has_asked_for_extension_cost
 tmp_show_extra_cost_only: init_has_asked_for_extension_time && !init_has_asked_for_extension_cost
 tmp_show_all:             !init_has_asked_for_extension_time && !init_has_asked_for_extension_cost
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: You are at the resourcing part of the project planning phase. To make decisions about resources you must have a plan for what work needs to be completed when._</span>
+[continue]
 
 How many people do you want to join your team for this project?  
 
@@ -199,58 +226,62 @@ write("Three people can complete approximately " + (3 * Math.pow(c_team_ineff, 2
 [continue]
 
 [if sys_show_help]
-_Help: In this simple simulation the amount of work that can be completed does not increase steadily for increasing number of workers. This is to simulate the fact that dependencies make it hard to schedule tasks to that everyone is busy at the same time._
+<span style="color:green;"> _**Help**: In this simple simulation the amount of work that can be completed does not increase steadily for increasing number of workers. This is to simulate the fact that dependencies make it hard to schedule tasks to that everyone is busy at the same time._</span>
 [continue]
 
 [if tmp_show_all]
-> [[Hire staff for the project->planning_scene_hire_staff_choice]]
-> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+> [[Hire workers for the project->planning_scene_hire_workers_choice]]
+> [[Spend 1 project day looking for cheaper workers->planning_scene_try_cheaper_workers]]
 > [[I can't deliver the project, ask for more time->planning_scene_renegotiate_time]]
 > [[I can't deliver the project, ask for more budget->planning_scene_renegotiate_cost]]
 
 [if tmp_show_hire_only]
-> [[Hire staff for the project->planning_scene_hire_staff_choice]]
-> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+> [[Hire workers for the project->planning_scene_hire_workers_choice]]
+> [[Spend 1 project day looking for cheaper workers->planning_scene_try_cheaper_workers]]
 
 [if tmp_show_extra_time_only]
-> [[Hire staff for the project->planning_scene_hire_staff_choice]]
-> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+> [[Hire workers for the project->planning_scene_hire_workers_choice]]
+> [[Spend 1 project day looking for cheaper workers->planning_scene_try_cheaper_workers]]
 > [[I can't deliver the project, ask for more time->planning_scene_renegotiate_time]]
 
 [if tmp_show_extra_cost_only]
-> [[Hire staff for the project->planning_scene_hire_staff_choice]]
-> [[Spend 1 project day looking for cheaper staff->planning_scene_try_cheaper_staff]]
+> [[Hire workers for the project->planning_scene_hire_workers_choice]]
+> [[Spend 1 project day looking for cheaper workers->planning_scene_try_cheaper_workers]]
 > [[I can't deliver the project, ask for more budget->planning_scene_renegotiate_cost]]
 
 
-::planning_scene_hire_staff_choice
+::planning_scene_hire_workers_choice
+ui_room: 'Choose the number of workers'
 --
 
-Hire {dropdown menu for: 'var_num_staff_text', choices: ['1', '2', '3']} staff
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: You can change the number of workers at intervals throughout the project._</span>
+[continue]
 
-> [[Hire that many staff->planning_scene_complete_hire]]
+Hire {dropdown menu for: 'var_num_workers_text', choices: ['1', '2', '3']} workers
+
+> [[Hire that many workers->planning_scene_complete_hire]]
 > {back link, label: 'Back'}
 
 
 ::planning_scene_complete_hire
-var_num_staff (var_num_staff_text == '1'): 1
-var_num_staff (var_num_staff_text == '2'): 2
-var_num_staff (var_num_staff_text == '3'): 3
+var_num_workers (var_num_workers_text == '1'): 1
+var_num_workers (var_num_workers_text == '2'): 2
+var_num_workers (var_num_workers_text == '3'): 3
 --
 
-You hired {var_num_staff} staff.
+You hired {var_num_workers} workers.
 
 [if sys_show_help]
-_Help: By the end of the planning phase you should know how much work needs to be completed on each day of the project, and how many people you will need each day to complete it._
+<span style="color:blue;">_Help: By the end of the planning phase you should know how much work needs to be completed on each day of the project, and how many people you will need each day to complete it._</span>
 [continue]
 
 You have completed the planning phase, click below to complete the first day of the execution phase
 
 [[Start Next Day->execution_scene_end_of_day]]
 
-
-::planning_scene_try_cheaper_staff
-
+::planning_scene_try_cheaper_workers
+ui_room: 'Looking for cheaper workers'
 tmp_is_cheaper: false
 tmp_new_random_cost:  78 + random.d10 - random.d10
 tmp_is_cheaper (var_team_1_cost_per_day > tmp_new_random_cost): true
@@ -259,10 +290,10 @@ var_current_day: var_current_day + 1
 --
 
 [if tmp_is_cheaper]
-You were able to find cheaper staff, the cost is now {var_team_1_cost_per_day} per day.
+You were able to find cheaper workers, the cost is now £{var_team_1_cost_per_day} per day.
 
 [else]
-You were not to find cheaper staff, the cost is still {var_team_1_cost_per_day} per day.
+You were not to find cheaper workers, the cost is still £{var_team_1_cost_per_day} per day.
 
 [continue]
 
@@ -270,9 +301,13 @@ You were not to find cheaper staff, the cost is still {var_team_1_cost_per_day} 
 
 
 ::planning_scene_renegotiate_time
-
+ui_room: 'Ask for more time'
 tmp_remaining_days: var_current_deadline - var_current_day
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: On projects there may be extra time or money available if necessary. Clients are usually not happy to give more time or money for the same scope._</span>
+[continue]
 
 You have {tmp_remaining_days} remaining to deliver the project
 
@@ -312,7 +347,12 @@ The deadline is in {tmp_remaining_days} days
 
 
 ::planning_scene_renegotiate_cost
+ui_room: 'Ask for more money'
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: On projects there may be extra time or money available if necessary. Clients are usually not happy to give more time or money for the same scope._</span>
+[continue]
 
 Amount of extra money to request : {dropdown menu for: 'tmp_num_extra_money', choices: ['£300', '£600', '£900']}
 
@@ -347,61 +387,46 @@ Although the client is not happy to be asked, they will give you this extra mone
 
 > [[Return to Planning Decision->planning_scene_start]]
 
-
 <!-- 
 *******************************
 Execution Loop
 *******************************
 -->
 
-::execution_scene_pm_options
-ui_room:                'Project Management Opportunities'
-
-var_staff_update_days (var_staff_update_days >= 0): var_staff_update_days - 1
-var_num_staff (var_staff_update_days == 0):         var_next_num_staff
-tmp_notification_message: "The first day of the project is complete"
+::execution_scene_change_workers
+ui_phase: 'Execution'
+ui_room: 'Change number of workers'
 --
 
-# Project Management Options
-
-You currently have {var_num_staff} worker(s) on the project.
-
-[if var_staff_update_days > 0 && var_next_num_staff != var_num_staff]
-The number of staff will change to {var_next_num_staff} in {var_staff_update_days} day(s).
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: In this project changing the number of workers is the same as re-scheduling_</span>
 [continue]
 
-> [[Change the number of staff->execution_scene_change_staff]]
-> [[Ask for more time->execution_scene_ask_time]]
-> [[Ask for more cost->execution_scene_ask_cost]]
-> [[No Action Required->execution_scene_test_event_no_event]]
+Hire {dropdown menu for: 'var_num_workers_text', choices: ['1', '2', '3']} workers. This will not take effect immediately.
 
-<!--
-*************************
-Execution PM Actions
-*************************
--->
-
-::execution_scene_change_staff
---
-Hire {dropdown menu for: 'var_num_staff_text', choices: ['1', '2', '3']} staff
-
-> [[Hire that many staff->execution_scene_complete_hire]]
+> [[Hire workers->execution_scene_complete_hire]]
 > {back link, label: 'Back'}
 
 ::execution_scene_complete_hire
-var_next_num_staff (var_num_staff_text == '1'): 1
-var_next_num_staff (var_num_staff_text == '2'): 2
-var_next_num_staff (var_num_staff_text == '3'): 3
-var_staff_update_days:                          2
+var_next_num_workers (var_num_workers_text == '1'): 1
+var_next_num_workers (var_num_workers_text == '2'): 2
+var_next_num_workers (var_num_workers_text == '3'): 3
+var_workers_update_days:                            2
 --
 
-You have chosen to work with {var_next_num_staff} staff. This change will happen in {var_staff_update_days} days.
+You have chosen to use {var_next_num_workers} workers. This change will happen in {var_workers_update_days} days.
 
 [[Start Next Day->execution_scene_test_event_no_event]]
 
 
 ::execution_scene_ask_time
+ui_room: 'Talk to client'
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: It is common to ask for more time or money during a project._</span>
+[continue]
+
 Number of extra days to ask for: {dropdown menu for: 'tmp_num_extra_days', choices: ['3', '6', '9']}
 
 > [[Request more days->exeuction_scene_request_days]]
@@ -434,7 +459,12 @@ Although the client is not happy to be asked, they allow you these extra days.
 > [[Continue Project->execution_scene_test_event_no_event]]
 
 ::execution_scene_ask_cost
+ui_room: 'Talk to client'
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: It is common to ask for more time or money during a project._</span>
+[continue]
 
 Amount of extra money to request : {dropdown menu for: 'tmp_num_extra_money', choices: ['£300', '£600', '£900']}
 
@@ -474,7 +504,7 @@ Execution Events
 *************************
 
 *************************
-Event 1 = Staff member ill for the day
+Event 1 = workers member ill for the day
 Event 2 = Cust change mind - re-do x rooms
 Event 3 = Can spend to make cust more happy
 *************************
@@ -487,6 +517,7 @@ tmp_notification_message: "Nothing interesting happened today"
 {embed passage: 'execution_scene_end_of_day'}
 
 ::execution_scene_test_event_event_1
+ui_room: 'Project event'
 var_event_1_happened:       true
 tmp_event_1_happening:      true
 tmp_notification_message:   "Less work was achieved today"
@@ -498,6 +529,7 @@ A worker was hung-over today and didn't manage to get any work done.
 [[End of the day->execution_scene_end_of_day]]
 
 ::execution_scene_test_event_event_2
+ui_room: 'Project event'
 tmp_num_rooms_redo: random.d4
 tmp_additional_budget_for_redo: c_basic_cost_per_room * tmp_num_rooms_redo
 tmp_additional_days_for_redo:   c_basic_days_per_room * tmp_num_rooms_redo
@@ -511,7 +543,11 @@ tmp_notification_message:       "You now have a bigger budget and a longer deadl
 --
 # Project Notification!
 
-The customer called. They've changed their mind about the colour of {tmp_num_rooms_redo} of the rooms. They would like you to re-do these rooms. 
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: Client's often change their mind when they see some completed work. In a plan-driven project like this, we must adjust the constraints when this happens._</span>
+[continue]
+
+The client called. They've changed their mind about the colour of {tmp_num_rooms_redo} of the rooms. They would like you to re-do these rooms. 
 
 [JavaScript]
 write("They will give you another £" + Math.floor(tmp_additional_budget_for_redo) + " and another " + Math.floor(tmp_additional_days_for_redo) + " days to complete the project")
@@ -521,15 +557,19 @@ write("They will give you another £" + Math.floor(tmp_additional_budget_for_red
 [[End of the day->execution_scene_end_of_day]]
 
 ::execution_scene_test_event_event_3
+ui_room: 'Project event'
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: Remember that costs include workers and other direct costs._</span>
+[continue]
+
 # Project Notification
 
 One of your workers finds a nice picture that will make the room look great. It will make your client happier although it will cost you £200. Do you want to buy it?
 
 > [[Yes->exec_scene_buy_picture]]
 > [[No->exec_scene_no_picture]]
-
-
 
 ::exec_scene_buy_picture
 tmp_notification_message: "You buy the picture and hang it up. The client will be thrilled"
@@ -538,35 +578,31 @@ var_cust_happy:           100
 --
 {embed passage: 'execution_scene_end_of_day'}
 
-
 ::exec_scene_no_picture
 tmp_notification_message: "You decide not to buy the picture"
 --
 {embed passage: 'execution_scene_end_of_day'}
 
-
-
 ::execution_scene_end_of_day
-
-ui_room:                'Project Management Opportunities'
+ui_room:                'End of Day report and options'
 tmp_event_rand_value:   random.d12
 
 tmp_event (tmp_event_rand_value > 3): 'no_event'
 tmp_event (tmp_event_rand_value == 1): 'event_1'
 tmp_event (tmp_event_rand_value == 2): 'event_2'
 tmp_event (tmp_event_rand_value == 3): 'event_3' 
-var_staff_update_days (var_staff_update_days >= 0): var_staff_update_days - 1
-var_num_staff (var_staff_update_days == 0):         var_next_num_staff
+var_workers_update_days (var_workers_update_days >= 0): var_workers_update_days - 1
+var_num_workers (var_workers_update_days == 0):         var_next_num_workers
 
-tmp_missing_staff:                          0
-tmp_missing_staff (tmp_event_1_happening):  1
+tmp_missing_workers:                          0
+tmp_missing_workers (tmp_event_1_happening):  1
 
 tmp_yesterdays_work_complete:    var_work_complete
 tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
-tmp_work_completed_today:        ((var_num_staff-tmp_missing_staff) * c_base_rooms_per_day * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_staff
+tmp_work_completed_today:        ((var_num_workers-tmp_missing_workers) * c_base_rooms_per_day * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_workers
 
 var_work_complete:               var_work_complete + tmp_work_completed_today
-var_running_cost:                var_running_cost + var_team_1_cost_per_day * var_num_staff
+var_running_cost:                var_running_cost + var_team_1_cost_per_day * var_num_workers
 
 var_project_complete (var_work_complete >= var_current_scope):       true
 
@@ -578,9 +614,13 @@ tmp_will_continue:               !tmp_past_deadline && !var_project_complete
 tmp_event_1_happening: false
 --
 
-_{tmp_notification_message}_
+<span style="color:darkred;">_{tmp_notification_message}_</span>
 
-# Project Update: Day {var_current_day}
+# End of day report: day {var_current_day}
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: this only reports completed rooms. There will be rooms that are partly complete that will be finished off tomorrow._</span>
+[continue]
 
 [if tmp_past_deadline]
 The deadline has passed
@@ -593,11 +633,10 @@ You have finished the project!
 > [[closure_scene]]
 
 [if tmp_will_continue]
+You currently have {var_num_workers} worker(s) on the project. 
 
-You currently have {var_num_staff} worker(s) on the project. 
-
-[if var_staff_update_days > 0 && var_next_num_staff != var_num_staff]
-The number of staff will change to {var_next_num_staff} in {var_staff_update_days} day(s).
+[if var_workers_update_days > 0 && var_next_num_workers != var_num_workers]
+The number of workers will change to {var_next_num_workers} in {var_workers_update_days} day(s).
 [continue]
 
 [if tmp_will_continue]
@@ -609,11 +648,9 @@ write("Room(s) completed today: " + (Math.floor(var_work_complete) - Math.floor(
 [if tmp_will_continue]
 
 > [[Start Next Day->execution_scene_test_event_{tmp_event}]]
-> [[Change the number of staff->execution_scene_change_staff]]
+> [[Change the number of workers->execution_scene_change_workers]]
 > [[Ask for more time->execution_scene_ask_time]]
 > [[Ask for more cost->execution_scene_ask_cost]]
-
-
 
 <!-- 
 *******************************
@@ -622,6 +659,9 @@ Closure Phase
 -->
 
 ::closure_scene
+ui_phase: 'Closure'
+ui_room:  'Project Report'
+
 tmp_profit:      var_current_budget - var_running_cost
 tmp_loss:        var_running_cost - var_current_budget
 tmp_overbudget:  tmp_profit < 0
@@ -647,4 +687,4 @@ The project was £{tmp_loss} over budget
 
 if [tmp_onbudget]
 
-The project was exactly on budget
+The project was exactly on budget.
