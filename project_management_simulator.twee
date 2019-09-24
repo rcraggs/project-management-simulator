@@ -28,7 +28,7 @@ tmp_notification_message: "This is the end of your first day on the project"
 
 var_workers_update_days:      -1
 sys_show_help:              false
-var_current_budget:         var_current_scope * 200 + (random.d100 * 10)
+var_current_budget:         var_current_scope * 200 + (random.d20 - random.d20)
 var_max_budget:             var_current_budget + (random.d100 * 10)
 var_current_deadline:       var_current_scope + random.d5
 var_max_deadline:           var_current_deadline + random.d10
@@ -617,6 +617,7 @@ var_current_scope(tmp_bad_paint_client_unhappy):          var_current_scope + 2
 [else]
 **Good News**: The cheaper paint seems ok. The client hasn't noticed the difference.
 [continue]
+
 
 ::execution_scene_end_of_day
 ui_room:                'End of Day report and options'
