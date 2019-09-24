@@ -151,7 +151,7 @@ You must decorate {var_current_scope} rooms.
 We have another {temp_extra_scope_amount} rooms that you can choose to decorate for an extra £{temp_scope_extra_budget} and {temp_scope_extra_days} days. Do you want to add this scope to the project?
 
 > [[Yes->init_scene_add_extra_scope]]
-> [[No->planning_scene_start]]
+> [[No->init_scene_options]]
 
 :: init_scene_add_extra_scope
 ui_room: 'Adding extra scope'
@@ -167,7 +167,7 @@ var_max_budget:         var_current_budget + (random.d100 * 10)
 
 You have chosen to add these extra rooms to the project scope.
 
-[[Return->planning_scene_start]]
+[[Return->init_scene_options]]
 
 ::init_scene_try_convince_client
 ui_room: 'Go/No Discussion'
