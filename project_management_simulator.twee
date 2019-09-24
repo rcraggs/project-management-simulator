@@ -21,6 +21,8 @@ var_current_scope: 10 + random.d10
 
 var_event_1_happened:  false
 var_event_2_happened:  false
+var_event_3_happened:  false
+var_event_4_happened:  false
 tmp_event_1_happening: false
 tmp_notification_message: "This is the end of your first day on the project"
 
@@ -191,6 +193,7 @@ ui_room: 'Decide not to do the project'
 [continue]
 
 You decided not to do the project. 
+
 _end_
 
 <!-- 
@@ -506,6 +509,7 @@ Execution Events
 Event 1 = workers member ill for the day
 Event 2 = Cust change mind - re-do x rooms
 Event 3 = Can spend to make cust more happy
+Event 4 = Cheap paint at the risk of unhappy customer
 *************************
 
 -->
@@ -582,6 +586,38 @@ tmp_notification_message: "You decide not to buy the picture"
 --
 {embed passage: 'execution_scene_end_of_day'}
 
+::execution_scene_test_event_event_4
+ui_room: 'Project event'
+var_event_4_happened:       true
+tmp_event_4_happening:      true
+tmp_notification_message:   "You continue using the usual paint"
+--
+# Project Notification!
+
+One of your workers has been offered some cheaper paint. If you choose to use this it will save you £200. However there's a slim but real chance that the customer will notice and be upset. 
+
+> [[Use the cheaper paint->execution_scene_event_4_cheaper_paint]]
+> [[Continue using the normal paint->execution_scene_end_of_day]]
+
+::execution_scene_event_4_cheaper_paint
+tmp_bad_paint_client_unhappy:                 false
+tmp_bad_paint_client_unhappy(random.d5==1):   true
+tmp_notification_message:                     "The cheaper paint was a success"
+tmp_notification_message(tmp_bad_paint_client_unhappy):   "You tried the cheaper paint but regret it now"
+
+var_current_scope(tmp_bad_paint_client_unhappy):          var_current_scope + 2
+--
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: If you have to repaint a room, that means your scope increases by 1.</span>
+[continue]
+
+[if tmp_bad_paint_client_unhappy]
+**Bad News**: The client noticed the weaker colour from the cheaper paint. You have to re-paint 1 of the rooms and the client is less happy.
+[else]
+**Good News**: The cheaper paint seems ok. The client hasn't noticed the difference.
+[continue]
+
 ::execution_scene_end_of_day
 ui_room:                'End of Day report and options'
 tmp_event_rand_value:   random.d12
@@ -589,7 +625,8 @@ tmp_event_rand_value:   random.d12
 tmp_event (tmp_event_rand_value > 3): 'no_event'
 tmp_event (tmp_event_rand_value == 1): 'event_1'
 tmp_event (tmp_event_rand_value == 2): 'event_2'
-tmp_event (tmp_event_rand_value == 3): 'event_3' 
+tmp_event (tmp_event_rand_value == 3): 'event_3'
+tmp_event (tmp_event_rand_value == 4): 'event_4' 
 var_workers_update_days (var_workers_update_days >= 0): var_workers_update_days - 1
 var_num_workers (var_workers_update_days == 0):         var_next_num_workers
 
