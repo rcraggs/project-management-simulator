@@ -8,7 +8,7 @@
 Project Manager Simulator
 
 :: Start 
-c_game_version:        "dev"
+c_game_version:        "1.0"
 c_team_ineff:          0.15
 c_work_rand_range:     0.1
 c_change_during_exec_happy_cost: 10
@@ -729,6 +729,7 @@ tmp_score (tmp_profit > 200 && !tmp_past_deadline):       tmp_score + 1
 tmp_score (tmp_loss > 200):       tmp_score - 2 
 tmp_score (tmp_remaining_days > 4): tmp_score + 1
 tmp_score(tmp_score<0): 0
+var_work_complete(var_work_complete>var_current_scope): var_current_scope
 --
 
 [if sys_show_help]
