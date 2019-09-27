@@ -9,8 +9,7 @@ Project Manager Simulator
 
 :: Start 
 c_game_version:        "dev"
-c_team_ineff:          0.7
-c_ineff_makeup:        1 - c_team_ineff
+c_team_ineff:          0.15
 c_work_rand_range:     0.1
 c_change_during_exec_happy_cost: 10
 c_base_rooms_per_day:  0.5
@@ -28,9 +27,9 @@ tmp_notification_message: "This is the end of your first day on the project"
 
 var_workers_update_days:      -1
 sys_show_help:              false
-var_current_budget:         var_current_scope * 200 + (random.d20 - random.d20)
+var_current_budget:         var_current_scope * 220 + (random.d20 - random.d20)
 var_max_budget:             var_current_budget + (random.d100 * 10)
-var_current_deadline:       var_current_scope + random.d5
+var_current_deadline:       var_current_scope + 4 + random.d5
 var_max_deadline:           var_current_deadline + random.d10
 var_current_day:            0
 var_cust_happy:             100
@@ -222,8 +221,8 @@ How many people do you want to join your team for this project?
 [JavaScript]
 write("Each person costs £" + var_team_1_cost_per_day.toFixed(0) + " per day.</br></br>");
 write("One person can complete approximately " + c_base_rooms_per_day + " room per day</br>");
-write("Two people can complete approximately " + (2 * c_team_ineff * c_base_rooms_per_day).toFixed(2)  + " room per day</br>");
-write("Three people can complete approximately " + (3 * Math.pow(c_team_ineff, 2)).toFixed(2)  + " room per day</br>");
+write("Two people can complete approximately " + ((2 * c_base_rooms_per_day)-1*c_team_ineff).toFixed(2)  + " room per day</br>");
+write("Three people can complete approximately " + ((3 * c_base_rooms_per_day)-2*c_team_ineff).toFixed(2)  + " room per day</br>");
 
 [continue]
 
@@ -524,6 +523,7 @@ ui_room: 'Project event'
 var_event_1_happened:       true
 tmp_event_1_happening:      true
 tmp_notification_message:   "Scope increase by 2"
+var_current_scope:          var_current_scope + 2
 --
 # Project Notification!
 
@@ -542,6 +542,7 @@ var_max_budget:                 var_max_budget + tmp_additional_budget_for_redo
 var_current_deadline:           var_current_deadline + tmp_additional_days_for_redo
 var_max_deadline:               var_max_deadline + tmp_additional_days_for_redo
 var_event_2_happened:           true
+var_current_scope:              var_current_scope + tmp_additional_days_for_redo
 tmp_notification_message:       "You now have a bigger budget and a longer deadline, but more work to do."
 --
 # Project Notification!
@@ -561,6 +562,7 @@ write("They will give you another £" + Math.floor(tmp_additional_budget_for_red
 
 ::execution_scene_test_event_event_3
 ui_room: 'Project event'
+var_event_3_happened:   true
 --
 
 [if sys_show_help]
@@ -609,7 +611,7 @@ var_current_scope(tmp_bad_paint_client_unhappy):          var_current_scope + 2
 --
 
 [if sys_show_help]
-<span style="color:blue;"> _**Help**: If you have to repaint a room, that means your scope increases by 1.</span>
+<span style="color:blue;"> **Help**: If you have to repaint a room, that means your scope increases by 1.</span>
 [continue]
 
 [if tmp_bad_paint_client_unhappy]
@@ -618,28 +620,26 @@ var_current_scope(tmp_bad_paint_client_unhappy):          var_current_scope + 2
 **Good News**: The cheaper paint seems ok. The client hasn't noticed the difference.
 [continue]
 
+[[End of the day->execution_scene_end_of_day]]
 
 ::execution_scene_end_of_day
 ui_room:                'End of Day report and options'
 tmp_event_rand_value:   random.d12
 
-tmp_event (tmp_event_rand_value > 3): 'no_event'
-tmp_event (tmp_event_rand_value == 1): 'event_1'
-tmp_event (tmp_event_rand_value == 2): 'event_2'
-tmp_event (tmp_event_rand_value == 3): 'event_3'
-tmp_event (tmp_event_rand_value == 4): 'event_4' 
+tmp_event (tmp_event_rand_value > 4): 'no_event'
+tmp_event (tmp_event_rand_value == 1 && !var_event_1_happened): 'event_1'
+tmp_event (tmp_event_rand_value == 2 && !var_event_2_happened): 'event_2'
+tmp_event (tmp_event_rand_value == 3 && !var_event_3_happened): 'event_3'
+tmp_event (tmp_event_rand_value == 4 && !var_event_3_happened): 'event_4' 
 var_workers_update_days (var_workers_update_days >= 0): var_workers_update_days - 1
 var_num_workers (var_workers_update_days == 0):         var_next_num_workers
 
-tmp_missing_workers:                          0
-tmp_missing_workers (tmp_event_1_happening):  1
-
 tmp_yesterdays_work_complete:    var_work_complete
 tmp_work_done_adjuster:          (c_work_rand_range ) - (random.fraction * c_work_rand_range * 2)
-tmp_work_completed_today:        ((var_num_workers-tmp_missing_workers) * c_base_rooms_per_day * c_team_ineff + c_ineff_makeup ) + tmp_work_done_adjuster * var_num_workers
+
+tmp_work_completed_today:        (var_num_workers * c_base_rooms_per_day) - ((var_num_workers-1)*c_team_ineff) + tmp_work_done_adjuster * var_num_workers
 
 var_work_complete:               var_work_complete + tmp_work_completed_today
-var_work_complete (tmp_event_1_happening): var_work_complete - 2
 var_running_cost:                var_running_cost + var_team_1_cost_per_day * var_num_workers
 var_running_cost (tmp_event_1_happening): var_running_cost - var_team_1_cost_per_day
 
@@ -664,12 +664,12 @@ tmp_event_1_happening: false
 [if tmp_past_deadline]
 The deadline has passed
 
-> [[closure_scene]]
+> [[End->closure_scene]]
 
 [if var_project_complete]
 You have finished the project!
 
-> [[closure_scene]]
+> [[End->closure_scene]]
 
 [if tmp_will_continue]
 You currently have {var_num_workers} worker(s) on the project. 
@@ -689,7 +689,7 @@ write("Room(s) completed today: " + (Math.floor(var_work_complete) - Math.floor(
 > [[Start Next Day->execution_scene_test_event_{tmp_event}]]
 > [[Change the number of workers->execution_scene_change_workers]]
 > [[Ask for more time->execution_scene_ask_time]]
-> [[Ask for more cost->execution_scene_ask_cost]]
+> [[Ask for more money->execution_scene_ask_cost]]
 
 <!-- 
 *******************************
@@ -701,22 +701,35 @@ Closure Phase
 ui_phase: 'Closure'
 ui_room:  'Project Report'
 
+
+tmp_remaining_days: var_current_deadline - var_current_day 
+
 tmp_profit:      var_current_budget - var_running_cost
 tmp_loss:        var_running_cost - var_current_budget
 tmp_overbudget:  tmp_profit < 0
 tmp_underbudget: tmp_profit > 0
 tmp_onbudget:    tmp_profit == 0 
 tmp_score:       0
+var_cust_happy(tmp_past_deadline) : var_cust_happy - 50
+var_cust_happy(var_cust_happy < 0): 0
 tmp_score (var_cust_happy == 100): tmp_score + 1
 tmp_score (var_cust_happy > 90):   tmp_score + 1
 tmp_score (var_cust_happy > 80):   tmp_score + 1
-tmp_score (tmp_profit):            tmp_score + 1
-tmp_score (tmp_underbudget):       tmp_score + 1 
+tmp_score (tmp_profile > 200 && !tmp_past_deadline):       tmp_score + 1 
+tmp_score (tmp_remaining_days > 4): tmp_score + 1
 --
+
+[if sys_show_help]
+<span style="color:blue;"> _**Help**: final scores are based on customer happiness, and whether you delivered the project within budget and deadlines._</span>
+[continue]
 
 # Score = {tmp_score} out of 5
 
+[if tmp_past_deadline]
+
+[else]
 Client Happiness: {var_cust_happy}%
+[continue]
 
 [JavaScript]
 write("Proportion of the rooms completed: " + Math.floor(var_work_complete) + " out of " + var_current_scope)
@@ -724,14 +737,12 @@ write("Proportion of the rooms completed: " + Math.floor(var_work_complete) + " 
 
 The project cost: £{var_running_cost}
 
-if [tmp_underbudget]
-
+[if tmp_underbudget]
 The project was £{tmp_profit} under budget
-
-if [tmp_overbudget]
-
+[continue]
+[if tmp_overbudget]
 The project was £{tmp_loss} over budget
-
-if [tmp_onbudget]
-
+[continue]
+[if tmp_onbudget]
 The project was exactly on budget.
+[continue]
